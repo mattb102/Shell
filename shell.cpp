@@ -29,6 +29,7 @@ void printArt()
 // i.e. this is the C style of doing this
 void ExecuteCommand(string command)
 {
+	// to do: clean this up. maybe a new exec family function so we do not need to add the '/bin/' part
 	string commandcopy = command;
 	const char *c1 = commandcopy.c_str();
 	command = "/bin/" + command;
@@ -47,6 +48,7 @@ void ExecuteCommand(string command)
 		char foo[1024];
 		read(pipes[0],foo, sizeof(foo));
 		cout << foo << endl;
+	// to do: flush buffer
 	}
 	
 }
