@@ -29,36 +29,45 @@ void printArt()
 void ExecuteCommand(char* command)
 {
 	char *args[] = {command, NULL};
+	char path[10];
+	sprintf(path,"/bin/%s",command);
 	int pipes[2];
 	pipe(pipes);
 	pid_t pid = fork();
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		execl("/bin/ls", "ls" , NULL);  //to do: make this work for any shell command (and allow for argument)
+		execl(path,command , NULL);  //to do: make this work for any shell command (and allow for argument)
 	}
 	else
 	{
 		waitpid(-1,NULL,0);
-		char foo[100];
+		char foo[1024];
 		read(pipes[0],foo, sizeof(foo));
-		printf("%s", foo);             // to do: flush this buffer
+		printf("%s\n", foo);            
+		memset(foo,0,sizeof(foo)); // clears buffer
 	}
 	
 }
+
+
 
 int main()
 {
 	
 	printf("%s\n","CSE 4300 PROJECT");
 	printArt();
+	char *history[100];
 	printf("%s\n\n\n","Created by: Matt Beauvais & Jan Feyen");
 	while(1)
 	{
 		printf("%s", "> ");
 		char* command = ReadCommand();
-		if (command == "exit")    // not working since switching this to c.
+		strcpy(history, command);
+		if (!strcmp(command,"exit"))
 			exit(0);
+		else if(!strcmp(command,"history"))
+			// to do: print history... NOTE: this should also be turned into a function later on so we dont have chains of conditionals for commands
 		else
 			ExecuteCommand(command);
 	}
