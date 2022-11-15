@@ -7,7 +7,7 @@
 
 char*  ReadCommand()
 {
-	char* command = malloc(sizeof(char) * 10);  // to do: malloc but no free.. where should we free?
+	char* command = malloc(sizeof(char) * 10);
 	scanf(" %[^\n]s",command);
 	return command;
 }
@@ -29,7 +29,7 @@ void printArt()
 // i.e. this is the C style of doing this
 void ExecuteCommand(char* command)
 {
-	char *args[] = {command, NULL};
+	char *args[] = {command, NULL}; 
 	char path[10];
 	sprintf(path,"/bin/%s",command);
 	int pipes[2];
@@ -75,7 +75,6 @@ int main()
 		num_commands++;
 		if (!strcmp(command,"exit"))
 		{
-			free(command);
 			break;
 		}
 		else if(!strcmp(command,"history"))
@@ -85,10 +84,11 @@ int main()
 		}
 		else
 			ExecuteCommand(command);
-		free(command);
 		
 		
 	}
+		for(int i = 0; i < num_commands; ++i)
+			free(history[i]);
 		free(history);
 }
 
