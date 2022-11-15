@@ -4,9 +4,10 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+
 char*  ReadCommand()
 {
-	char* command = malloc(sizeof(char) * 20);  // to do: malloc but no free.. where should we free?
+	char* command = malloc(sizeof(char) * 10);  // to do: malloc but no free.. where should we free?
 	scanf(" %[^\n]s",command);
 	return command;
 }
@@ -37,17 +38,23 @@ void ExecuteCommand(char* command)
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		execl(path,command , NULL);  //to do: make this work for any shell command (and allow for argument)
+		int code = execl(path,command , NULL);
+		if (code == -1)
+		{
+			char error_message[] = "Command does not exist!";
+			write(pipes[1], error_message ,strlen(error_message) + 1);
+			_exit(0);
+		} 	
 	}
 	else
 	{
+		
 		waitpid(-1,NULL,0);
-		char foo[1024];
-		read(pipes[0],foo, sizeof(foo));
-		printf("%s\n", foo);            
+		char foo[500];	
 		memset(foo,0,sizeof(foo)); // clears buffer
+		int size = read(pipes[0],foo, sizeof(foo));
+		printf("%s\n", foo);            
 	}
-	
 }
 
 
@@ -57,20 +64,32 @@ int main()
 	
 	printf("%s\n","CSE 4300 PROJECT");
 	printArt();
-	char *history[100];
+	char **history = malloc(sizeof(char*)*sizeof(char*));
+	int num_commands = 0;
 	printf("%s\n\n\n","Created by: Matt Beauvais & Jan Feyen");
 	while(1)
 	{
-		printf("%s", "> ");
+		printf("\n%s", "> ");
 		char* command = ReadCommand();
-		strcpy(history, command);
+		history[num_commands] = command;
+		num_commands++;
 		if (!strcmp(command,"exit"))
-			exit(0);
+		{
+			free(command);
+			break;
+		}
 		else if(!strcmp(command,"history"))
-			// to do: print history... NOTE: this should also be turned into a function later on so we dont have chains of conditionals for commands
+		{
+			for(int i = 0; i < num_commands - 1; ++i) 
+				printf("%s\n",history[i]);
+		}
 		else
 			ExecuteCommand(command);
+		free(command);
+		
+		
 	}
+		free(history);
 }
 
 
