@@ -24,21 +24,20 @@ void printArt()
 	printf("%s\n","|_______||__| |__||_______||_______||_______|");
 }
 
-// note: C++ provides a popen() command which handles the forking and exec for you
+// note: C provides a popen() and also a system() command which handles the forking and exec for you
 // we decided to not use this and do it manually for the sake of learning 
-// i.e. this is the C style of doing this
 void ExecuteCommand(char* command)
 {
 	char *args[] = {command, NULL}; 
 	char path[10];
-	sprintf(path,"/bin/%s",command);
+	sprintf(path,"/usr/bin/%s",command);
 	int pipes[2];
 	pipe(pipes);
 	pid_t pid = fork();
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		int code = execl(path,command , NULL);
+		int code = execl(path,path,(char*)NULL);
 		if (code == -1)
 		{
 			char error_message[] = "Command does not exist!";
@@ -50,7 +49,8 @@ void ExecuteCommand(char* command)
 	{
 		
 		waitpid(-1,NULL,0);
-		char foo[500];	
+		char foo[500];
+		write(pipes[1], "\0", 1);	
 		memset(foo,0,sizeof(foo)); // clears buffer
 		int size = read(pipes[0],foo, sizeof(foo));
 		printf("%s\n", foo);            
