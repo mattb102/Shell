@@ -5,6 +5,53 @@
 #include <stdlib.h>
 #include <string.h>
 
+char* wordLis[20];
+
+char** parseString (char* str)
+{
+	char* args = strtok(str, " ");
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	char** argsList = malloc(500);
+	for(int i = 0; i < strlen(args); ++i)
+	{
+		if(str[i] != '\0')
+			argsList[j][k] = args[i];
+		else
+		{
+			j++;
+			k = 0;
+		}
+	}
+	argsList[j+1] = NULL;
+	return argsList;
+	/*
+	int i = 0;
+	int j =0;
+	int k = 0;
+	while (str[i] != '\0')
+	{
+		if(str[i] != 32)
+		{
+			wordLis[j][k] = str[i];
+			k++;
+
+		}
+		else
+		{
+			wordLis[j][k] = '\0';
+			j++;
+			k = 0;
+		}
+		i++;
+	}
+	//wordLis[j][k] = '\0';
+	//wordLis[j + 1] = NULL;
+	//printf("%s\n%s\n",wordLis[0], wordLis[1]);
+	*/
+}
+
 char*  ReadCommand()
 {
 	char* command = malloc(sizeof(char) * 10);
@@ -28,8 +75,8 @@ void printArt()
 // we decided to not use this and do it manually for the sake of learning 
 void ExecuteCommand(char* command)
 {
-	char *args[] = {command, NULL}; 
-	char path[10];
+	char** argsList = parseString(command);
+	char path[30];
 	sprintf(path,"/usr/bin/%s",command);
 	int pipes[2];
 	pipe(pipes);
@@ -37,7 +84,7 @@ void ExecuteCommand(char* command)
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		int code = execl(path,path,(char*)NULL);
+		int code = execv(path, argsList);
 		if (code == -1)
 		{
 			char error_message[] = "Command does not exist!";
@@ -83,6 +130,7 @@ int main()
 				printf("%s\n",history[i]);
 		}
 		else
+			//parseString(command);
 			ExecuteCommand(command);
 		
 		
