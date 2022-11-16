@@ -5,13 +5,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+char** ParseCommand(char* command)
+{
+	int i = 0;
+	char* arg = strtok(command," ");
+	char** argsList = malloc(strlen(command) * sizeof(char) + 1);
+	while(arg != NULL)
+	{
+		argsList[i] = arg;
+		arg = strtok(NULL, " ");
+		++i;
+	}
+
+	return argsList;
+		
+}
 char*  ReadCommand()
 {
 	char* command = malloc(sizeof(char) * 10);
 	scanf(" %[^\n]s",command);
 	return command;
 }
-
 
 void printArt()
 {
@@ -28,16 +42,16 @@ void printArt()
 // we decided to not use this and do it manually for the sake of learning 
 void ExecuteCommand(char* command)
 {
-	char *args[] = {command, NULL}; 
-	char path[10];
-	sprintf(path,"/usr/bin/%s",command);
+	char path[20];
+	char** argsList = ParseCommand(command);
+	sprintf(path,"/usr/bin/%s",argsList[0]);
 	int pipes[2];
 	pipe(pipes);
 	pid_t pid = fork();
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		int code = execl(path,path,(char*)NULL);
+		int code = execv(path,argsList);
 		if (code == -1)
 		{
 			char error_message[] = "Command does not exist!";
@@ -46,18 +60,15 @@ void ExecuteCommand(char* command)
 		} 	
 	}
 	else
-	{
-		
+	{		
 		waitpid(-1,NULL,0);
 		char foo[500];
-		write(pipes[1], "\0", 1);	
+		write(pipes[1], "\0", 1); // writes an end line character incase no stdout is produced	
 		memset(foo,0,sizeof(foo)); // clears buffer
 		int size = read(pipes[0],foo, sizeof(foo));
 		printf("%s\n", foo);            
 	}
 }
-
-
 
 int main()
 {
@@ -74,9 +85,7 @@ int main()
 		history[num_commands] = command;
 		num_commands++;
 		if (!strcmp(command,"exit"))
-		{
 			break;
-		}
 		else if(!strcmp(command,"history"))
 		{
 			for(int i = 0; i < num_commands - 1; ++i) 
@@ -84,16 +93,8 @@ int main()
 		}
 		else
 			ExecuteCommand(command);
-		
-		
 	}
 		for(int i = 0; i < num_commands; ++i)
 			free(history[i]);
 		free(history);
 }
-
-
-
-
-
-
