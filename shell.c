@@ -53,7 +53,7 @@ char*** SeperateProcesses(char** parsedCommand)
 
 char*  ReadCommand()
 {
-	char* command = malloc(sizeof(char) * 10);
+	char* command = malloc(sizeof(char) * 100);
 	scanf(" %[^\n]s",command);
 	return command;
 }
