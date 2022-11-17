@@ -5,21 +5,52 @@
 #include <stdlib.h>
 #include <string.h>
 
+int num_pipes = 0;
+
+
 char** ParseCommand(char* command)
 {
 	int i = 0;
+	char** listArgs = malloc(strlen(command) * sizeof(char*) + 3);
 	char* arg = strtok(command," ");
-	char** argsList = malloc(strlen(command) * sizeof(char) + 1);
 	while(arg != NULL)
 	{
-		argsList[i] = arg;
+		listArgs[i] = arg;
 		arg = strtok(NULL, " ");
 		++i;
 	}
 
-	return argsList;
+	return listArgs;
 		
 }
+
+char*** SeperateProcesses(char** parsedCommand)
+{
+	char*** processArgs = malloc(100);
+	for(int i = 0; i < 10; ++i)
+		processArgs[i] = malloc(100);
+	int processPos = 0;
+	int i = 0;
+	int j = 0;
+	while(parsedCommand[i] != NULL)
+	{
+		if (strcmp(parsedCommand[j], "|"))
+		{
+			processArgs[processPos][j] = parsedCommand[i];
+			j++;	
+		}
+		else
+		{
+			num_pipes++;
+			processArgs[processPos][j] = NULL;
+			j = 0;
+			processPos++;
+		}
+		i++;
+	}
+	return processArgs;
+}
+
 char*  ReadCommand()
 {
 	char* command = malloc(sizeof(char) * 10);
@@ -43,15 +74,16 @@ void printArt()
 void ExecuteCommand(char* command)
 {
 	char path[20];
-	char** argsList = ParseCommand(command);
-	sprintf(path,"/usr/bin/%s",argsList[0]);
+	char** listArgs = ParseCommand(command); // represents entire command ex. {"git","branch","|","grep","master"}
+	char*** processArgs = SeperateProcesses(listArgs); //3d array, each entry is an array of each process args ex. { {"git","branch"} , {"grep","masater"} } also counts how many pipes we need
+	sprintf(path,"/usr/bin/%s",processArgs[0][0]);
 	int pipes[2];
 	pipe(pipes);
 	pid_t pid = fork();
 	if (pid == 0)
 	{
 		dup2(pipes[1],1);
-		int code = execv(path,argsList);
+		int code = execv(path,processArgs[0]);
 		if (code == -1)
 		{
 			char error_message[] = "Command does not exist!";
