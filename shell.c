@@ -19,7 +19,7 @@ char** ParseCommand(char* command)
 		arg = strtok(NULL, " ");
 		++i;
 	}
-
+	listArgs[i] = NULL;
 	return listArgs;
 		
 }
@@ -98,7 +98,12 @@ void ExecuteCommand(char* command)
 		write(pipes[1], "\0", 1); // writes an end line character incase no stdout is produced	
 		memset(foo,0,sizeof(foo)); // clears buffer
 		int size = read(pipes[0],foo, sizeof(foo));
-		printf("%s\n", foo);            
+		printf("%s\n", foo);
+
+		free(listArgs);
+		for(int i = 0; i < 10; ++i)
+			free(processArgs[i]);
+		free(processArgs);           
 	}
 }
 
