@@ -34,7 +34,7 @@ char*** SeperateProcesses(char** parsedCommand)
 	int j = 0;
 	while(parsedCommand[i] != NULL)
 	{
-		if (strcmp(parsedCommand[j], "|"))
+		if (strcmp(parsedCommand[i], "|"))
 		{
 			processArgs[processPos][j] = parsedCommand[i];
 			j++;	
@@ -73,39 +73,66 @@ void printArt()
 // we decided to not use this and do it manually for the sake of learning 
 void ExecuteCommand(char* command)
 {
-	char path[20];
 	char** listArgs = ParseCommand(command); // represents entire command ex. {"git","branch","|","grep","master"}
 	char*** processArgs = SeperateProcesses(listArgs); //3d array, each entry is an array of each process args ex. { {"git","branch"} , {"grep","masater"} } also counts how many pipes we need
-	sprintf(path,"/usr/bin/%s",processArgs[0][0]);
-	int pipes[2];
-	pipe(pipes);
-	pid_t pid = fork();
-	if (pid == 0)
+	int pipes[num_pipes][2];
+	for(int i = 0; i < num_pipes + 1; ++i)
+		pipe(pipes[i]);
+	pid_t pids[num_pipes + 1];
+	for(int i = 0; i < num_pipes + 1; ++i)
 	{
-		dup2(pipes[1],1);
-		int code = execv(path,processArgs[0]);
-		if (code == -1)
+		pids[i] = fork();
+		if (pids[i] == 0)
 		{
-			char error_message[] = "Command does not exist!";
-			write(pipes[1], error_message ,strlen(error_message) + 1);
-			_exit(0);
-		} 	
+			if (i == 0 && num_pipes != 0)
+			{
+				dup2(pipes[i][1], 1);
+				for(int i = 0; i < num_pipes + 1; ++i)
+				{
+					close(pipes[i][1]);
+					close(pipes[i][0]);
+				}
+				execvp(processArgs[i][0], processArgs[i]);
+			}
+			else if(i < num_pipes && i != 0)
+			{
+				dup2(pipes[i][1],1);
+				dup2(pipes[i-1][0],0);
+				for(int i = 0; i < num_pipes + 1; ++i)
+				{
+					close(pipes[i][0]);
+					close(pipes[i][1]);
+				}
+				execvp(processArgs[i][0], processArgs[i]);
+				
+			}
+			else
+			{
+				if(num_pipes > 0)
+					dup2(pipes[i - 1][0],0);
+				for(int i = 0; i < num_pipes + 1; ++i)
+				{
+					close(pipes[i][0]);
+					close(pipes[i][1]);
+				}
+				execvp(processArgs[i][0], processArgs[i]);
+					
+			}
+		}	
 	}
-	else
-	{		
-		waitpid(-1,NULL,0);
-		char foo[500];
-		write(pipes[1], "\0", 1); // writes an end line character incase no stdout is produced	
-		memset(foo,0,sizeof(foo)); // clears buffer
-		int size = read(pipes[0],foo, sizeof(foo));
-		printf("%s\n", foo);
-
-		free(listArgs);
-		for(int i = 0; i < 10; ++i)
-			free(processArgs[i]);
-		free(processArgs);           
+	for(int i = 0; i < num_pipes + 1; ++i)
+	{
+		close(pipes[i][0]);
+		close(pipes[i][1]);
 	}
+	for(int i = 0; i < num_pipes + 1; ++i)
+		waitpid(pids[i], NULL, 0);
+	free(listArgs);
+	for(int i = 0; i < 10; ++i)
+		free(processArgs[i]);
+	free(processArgs);           
 }
+
 
 int main()
 {
@@ -117,6 +144,7 @@ int main()
 	printf("%s\n\n\n","Created by: Matt Beauvais & Jan Feyen");
 	while(1)
 	{
+		num_pipes = 0;
 		printf("\n%s", "> ");
 		char* command = ReadCommand();
 		history[num_commands] = command;
