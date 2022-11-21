@@ -58,6 +58,16 @@ char*  ReadCommand()
 	return command;
 }
 
+void closePipes(int pipes[][2])
+{
+	for(int i = 0; i < num_pipes + 1; ++i)
+	{
+		close(pipes[i][1]);
+		close(pipes[i][0]);
+	}
+				
+}
+
 void printArt()
 {
 	printf("%s\n"," _______  __   __  _______  ___      ___     ");
@@ -87,22 +97,14 @@ void ExecuteCommand(char* command)
 			if (i == 0 && num_pipes != 0)
 			{
 				dup2(pipes[i][1], 1);
-				for(int i = 0; i < num_pipes + 1; ++i)
-				{
-					close(pipes[i][1]);
-					close(pipes[i][0]);
-				}
+				closePipes(pipes);
 				execvp(processArgs[i][0], processArgs[i]);
 			}
 			else if(i < num_pipes && i != 0)
 			{
 				dup2(pipes[i][1],1);
 				dup2(pipes[i-1][0],0);
-				for(int i = 0; i < num_pipes + 1; ++i)
-				{
-					close(pipes[i][0]);
-					close(pipes[i][1]);
-				}
+				closePipes(pipes);
 				execvp(processArgs[i][0], processArgs[i]);
 				
 			}
@@ -110,21 +112,13 @@ void ExecuteCommand(char* command)
 			{
 				if(num_pipes > 0)
 					dup2(pipes[i - 1][0],0);
-				for(int i = 0; i < num_pipes + 1; ++i)
-				{
-					close(pipes[i][0]);
-					close(pipes[i][1]);
-				}
+				closePipes(pipes);	
 				execvp(processArgs[i][0], processArgs[i]);
 					
 			}
 		}	
 	}
-	for(int i = 0; i < num_pipes + 1; ++i)
-	{
-		close(pipes[i][0]);
-		close(pipes[i][1]);
-	}
+	closePipes(pipes);	
 	for(int i = 0; i < num_pipes + 1; ++i)
 		waitpid(pids[i], NULL, 0);
 	free(listArgs);
