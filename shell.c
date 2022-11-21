@@ -19,7 +19,7 @@ char** ParseCommand(char* command)
 		arg = strtok(NULL, " ");
 		++i;
 	}
-	listArgs[i] = NULL;
+
 	return listArgs;
 		
 }
@@ -94,6 +94,7 @@ void ExecuteCommand(char* command)
 		pids[i] = fork();
 		if (pids[i] == 0)
 		{
+
 			if (i == 0 && num_pipes != 0)
 			{
 				dup2(pipes[i][1], 1);
