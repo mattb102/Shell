@@ -7,6 +7,13 @@
 
 int num_pipes = 0;
 
+char*  ReadCommand()
+{
+	char* command = malloc(sizeof(char) * 100);
+	scanf(" %[^\n]s",command);
+	return command;
+}
+
 
 char** ParseCommand(char* command)
 {
@@ -19,7 +26,7 @@ char** ParseCommand(char* command)
 		arg = strtok(NULL, " ");
 		++i;
 	}
-
+	listArgs[i] = NULL;
 	return listArgs;
 		
 }
@@ -51,12 +58,6 @@ char*** SeperateProcesses(char** parsedCommand)
 	return processArgs;
 }
 
-char*  ReadCommand()
-{
-	char* command = malloc(sizeof(char) * 100);
-	scanf(" %[^\n]s",command);
-	return command;
-}
 
 void closePipes(int pipes[][2])
 {
@@ -99,14 +100,24 @@ void ExecuteCommand(char* command)
 			{
 				dup2(pipes[i][1], 1);
 				closePipes(pipes);
-				execvp(processArgs[i][0], processArgs[i]);
+				int code = execvp(processArgs[i][0], processArgs[i]);
+				if (code < 0)
+				{
+					fprintf(stderr, "invalid command!");
+					_exit(1);
+				}
 			}
 			else if(i < num_pipes && i != 0)
 			{
 				dup2(pipes[i][1],1);
 				dup2(pipes[i-1][0],0);
 				closePipes(pipes);
-				execvp(processArgs[i][0], processArgs[i]);
+				int code = execvp(processArgs[i][0], processArgs[i]);
+				if (code < 0)
+				{
+					fprintf(stderr, "invalid command!");
+					_exit(1);
+				}
 				
 			}
 			else
@@ -114,7 +125,12 @@ void ExecuteCommand(char* command)
 				if(num_pipes > 0)
 					dup2(pipes[i - 1][0],0);
 				closePipes(pipes);	
-				execvp(processArgs[i][0], processArgs[i]);
+				int code = execvp(processArgs[i][0], processArgs[i]);
+				if (code < 0)
+				{
+					fprintf(stderr, "invalid command!");
+					_exit(1);
+				}
 					
 			}
 		}	
@@ -134,7 +150,7 @@ int main()
 	
 	printf("%s\n","CSE 4300 PROJECT");
 	printArt();
-	char **history = malloc(sizeof(char*)*sizeof(char*));
+	char **history = malloc(100);
 	int num_commands = 0;
 	printf("%s\n\n\n","Created by: Matt Beauvais & Jan Feyen");
 	while(1)
@@ -142,10 +158,14 @@ int main()
 		num_pipes = 0;
 		printf("\n%s", "> ");
 		char* command = ReadCommand();
-		history[num_commands] = command;
+		history[num_commands] = malloc(strlen(command) + 1); 
+		strcpy(history[num_commands],command);
 		num_commands++;
 		if (!strcmp(command,"exit"))
+		{
+			free(command);
 			break;
+		}
 		else if(!strcmp(command,"history"))
 		{
 			for(int i = 0; i < num_commands - 1; ++i) 
@@ -153,6 +173,7 @@ int main()
 		}
 		else
 			ExecuteCommand(command);
+			free(command);
 	}
 		for(int i = 0; i < num_commands; ++i)
 			free(history[i]);
